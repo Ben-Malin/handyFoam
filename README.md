@@ -1,7 +1,7 @@
 # handyFoam
 Quick OpenFOAM case generation with sane defaults
 
-https://user-images.githubusercontent.com/66654390/224234277-3c0eae51-70e6-4b8b-b48d-266370f47d07.mp4
+![handyFoam](https://user-images.githubusercontent.com/66654390/224238058-412ac016-1e26-4103-8433-4eb90c142161.gif)
 
 ## installation
 
