@@ -194,7 +194,7 @@ scalarTransport=false
 flip() { if [ "$1" == "true" ]; then echo "false"; else echo "true"; fi }
 
 while [ "$inputDone" != "true" ]; do
-    printf "${CYAN}\nExtras?\n${NC}"
+    printf "${CYAN}\nExtras? (NOTE: not yet implemented)\n${NC}"
     printf "Currently selected: "
     $fvOptions && printf " fvOptions"
     $topoSet && printf " topoSet"
