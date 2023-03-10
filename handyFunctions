@@ -1,0 +1,180 @@
+#!/bin/bash
+
+## ----- Print colors ----- ##
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+## ------------------------ ##
+
+setNu () {
+    # Input options:
+    #   $1 can be 'air', 'water', or a number that gets fed to foamDictionary
+    transp='constant/transportProperties'
+    printf "${CYAN}Setting $transp ${NC}\n" 
+
+    if [ "$1" == "air" ]; then
+        foamDictionary -entry nu -set "[0 2 -1 0 0 0 0] 1.5e-5" $transp
+    elif [ "$1" == "water" ]; then
+        foamDictionary -entry nu -set "[0 2 -1 0 0 0 0] 1e-6" $transp
+    elif [ -z "$1" ]; then
+        foamDictionary -entry nu -set "[0 2 -1 0 0 0 0] $1" $transp
+    else
+        echo "Argument not provided"
+    fi
+}
+
+setThermo () {
+    # Input options:
+    #   $1 Same as setNu, but no allowance for custom
+    #   $2 for choosing the equation of state, 'bous' or 'ideal'
+
+    thermo='constant/thermophysicalProperties'
+    printf "${CYAN}Setting $thermo ${NC}\n" 
+
+    if [ "$1" == "air" ]; then
+        foamDictionary -entry mixture.specie.molWeight -set 28.97 $thermo
+        foamDictionary -entry mixture.equationOfState.rho0 -set 1.225 $thermo
+        foamDictionary -entry mixture.equationOfState.beta -set 3e-3 $thermo
+        foamDictionary -entry mixture.thermodynamics.Cv -set 712 $thermo
+        foamDictionary -entry mixture.thermodynamics.Cp -set 1006 $thermo
+        foamDictionary -entry mixture.transport.mu -set 1.5e-5 $thermo
+        foamDictionary -entry mixture.transport.Pr -set 0.7 $thermo
+
+    elif [ "$1" == "water" ]; then
+        foamDictionary -entry mixture.specie.molWeight -set 18 $thermo
+        foamDictionary -entry mixture.equationOfState.rho0 -set 1000 $thermo
+        foamDictionary -entry mixture.equationOfState.beta -set 2.1e-4 $thermo
+        foamDictionary -entry mixture.thermodynamics.Cv -set 4160 $thermo
+        foamDictionary -entry mixture.thermodynamics.Cp -set 4184 $thermo
+        foamDictionary -entry mixture.transport.mu -set 1.05e-3 $thermo
+        foamDictionary -entry mixture.transport.Pr -set 6.9 $thermo
+
+    else
+        print "Argument 1 for setThermo invalid, please choose air or water"
+    fi
+
+    if [  "$2" == "bous" ]; then
+        foamDictionary -entry thermoType.equationOfState -set Boussinesq $thermo
+    elif [ "$2" == "ideal" ]; then
+        foamDictionary -entry thermoType.equationOfState -set perfectGas $thermo
+    else
+        # default to bous
+        foamDictionary -entry thermoType.equationOfState -set Boussinesq $thermo
+    fi
+}
+
+setSolver () {
+    # Input options
+    #   $1 is the density option, 'incomp', 'buoy', 'comp'
+    #       compressible and multiphase not currently implemented
+    #   $2 is the timme option, 'steady', 'piso', 'pimple'
+    cont='system/controlDict'
+    printf "${CYAN}Setting solver in $cont ${NC}\n" 
+
+    if [ "$1" == 'incomp' ] && [ "$2" == 'steady' ]; then
+        foamDictionary -entry application -set 'simpleFoam' $cont
+    elif [ "$1" == 'incomp' ] && ([ "$2" == 'piso' ] || [ "$2" == 'pimple' ]); then 
+        foamDictionary -entry application -set "pimpleFoam" $cont
+    elif [ "$1" == 'buoy' ] && [ "$2" == 'steady' ]; then 
+        foamDictionary -entry application -set "buoyantSimpleFoam" $cont
+    elif [ "$1" == 'buoy' ] && ([ "$2" == 'piso' ] || [ "$2" == 'pimple' ]); then 
+        foamDictionary -entry application -set "buoyantPimpleFoam" $cont
+    else
+        print "Invalid arguments for setSolver"
+    fi
+}
+
+setTurbulence () {
+    # Input options
+    #   $1 is the turbulence class, 'lam', 'rans', 'les', 'des'
+    #   $2 is the turbulence model, e.g. 'kOmegaSST'
+
+    if [ -f constant/momentumTransport ]; then
+        turb='constant/momentumTransport'
+    else
+        turb='constant/turbulenceProperties'
+    fi
+    printf "${CYAN}Setting $turb ${NC}\n" 
+
+    # Set the simulation type
+    if [ "$1" == "lam" ]; then
+        foamDictionary -entry simulationType -set laminar $turb 
+    elif [ "$1" == "rans" ]; then
+        foamDictionary -entry simulationType -set RAS $turb 
+        foamDictionary -entry RAS.model -set $2 $turb
+    elif ([ "$1" == "les" ] || [ "$1" == "des" ]); then
+        foamDictionary -entry simulationType -set LES $turb 
+        foamDictionary -entry LES.model -set $2 $turb
+    fi
+
+    # Set the delta 
+    if ([ "$1" == "les" ] || [ "$1" == "des" ]); then
+        if [[ "$2" =~ '.*IDDES' ]]; then
+            foamDictionary -entry LES.delta -set IDDESDelta $turb
+        else
+            foamDictionary -entry LES.delta -set cubeRootVol $turb
+        fi
+    fi
+}
+
+setSolutions () {
+    # Input options
+    #   $1 can be 'piso' or 'pimple'
+    sol='system/fvSolution'
+    cont='system/controlDict'
+    printf "${CYAN}\nSetting $cont and $sol${NC}\n" 
+
+    if [ "$1" == 'piso' ]; then
+        foamDictionary -entry PIMPLE.nCorrectors -set 2 $sol
+        foamDictionary -entry PIMPLE.nOuterCorrectors -set 1 $sol
+        foamDictionary -entry PIMPLE.nNonOrthogonalCorrectors -set 1 $sol
+        foamDictionary -entry maxCo -set 1 $cont
+
+    elif [ "$1" == 'pimple' ]; then
+        foamDictionary -entry PIMPLE.nCorrectors -set 1 $sol
+        foamDictionary -entry PIMPLE.nOuterCorrectors -set 3 $sol
+        foamDictionary -entry PIMPLE.nNonOrthogonalCorrectors -set 1 $sol
+        foamDictionary -entry maxCo -set 5 $cont
+
+    else
+        print "Argument 1 for setSolutions invalid, choose piso or pimple"
+    fi
+}
+
+setSchemes () {
+    # Input options
+    #   $1 is the order of the schemes, 'first' or 'second'
+    #   $2 is the time behavior, 'steady', 'piso' or 'pimple'
+    #   $3 is the turbulence class, 'rans', 'les', or 'des'
+
+    schemes='system/fvSchemes'
+    printf "${CYAN}\nSetting $schemes ${NC}\n" 
+
+    # Set the time scheme
+    if [ "$2" == "steady" ]; then
+        foamDictionary -entry ddtSchemes.default -set steadyState $schemes
+    elif [ "$1" == "first" ] && ([ "$2" == "piso" ] || [ "$2" == "pimple" ]); then
+        foamDictionary -entry ddtSchemes.default -set Euler $schemes
+    elif [ "$1" == "second" ] && ([ "$2" == "piso" ] || [ "$2" == "pimple" ]); then
+        foamDictionary -entry ddtSchemes.default -set backward $schemes
+    fi
+
+    # Use bounded schemes if steady state
+    bound=''
+    if [ "$2" == "steady" ]; then
+        bound='bounded'
+    fi
+
+    # Set the other schemes
+    # For now just div schemes, will look into optimal setting for the others later
+    if [ "$1" == "first" ]; then
+        foamDictionary -entry "divSchemes.div(phi,U)" -set "$bound Gauss upwind" $schemes
+        foamDictionary -entry "divSchemes.scalars" -set "$bound Gauss upwind" $schemes
+    elif [ "$3" == "rans" ]; then
+        foamDictionary -entry "divSchemes.div(phi,U)" -set "$bound Gauss linearUpwindV grad(U)" $schemes
+        foamDictionary -entry "divSchemes.scalars" -set "$bound Gauss linearUpwind default" $schemes
+    elif ([ "$3" == "les" ] || [ "$3" == "des" ]); then
+        foamDictionary -entry "divSchemes.div(phi,U)" -set "Gauss LUST grad(U)" $schemes
+        foamDictionary -entry "divSchemes.scalars" -set "Gauss linearUpwind default" $schemes
+    fi
+}

@@ -1,0 +1,251 @@
+#!/bin/bash
+
+# Author: Ben Malin
+# Script to enable rapid setup of openfoam cases with sane defaults
+#
+# Copying foam tutorial cases works but is unweildy an requires knowing 
+# which is closest to the case you're looking at
+
+templateDir="$handyDir/templateCase"
+
+# Source the set functions
+. $handyDir/handyFunctions
+
+# answers array tracks responses to prompts
+declare -A answers
+
+## ----------------------------------- ##
+## ---------- Options prompt --------- ##
+## ----------------------------------- ##
+
+printf "${RED}\nhandyFoam - Quick OF case setup \n${NC}"
+printf "\nCreating case in new directory \n"
+
+printf "${CYAN}Case Name: ${NC}"
+read caseName;  
+if ([ -f $caseName ] || [ -d $caseName ]); then
+    printf "${RED}WARNING - $caseName already exists in this dir\n"
+    printf "Exiting to avoid overwriting data${NC}\n"
+    exit 1
+fi
+
+printf "${CYAN}\nDensity options\n${NC}"
+printf " 1) Incompressible\n"
+printf " 2) Buoyant\n"
+printf " 3) Compressible\n"
+
+read -n 1 option;
+case $option in 
+    "1")
+        answers["density"]="incomp"
+        ;;
+    "2")
+        answers["density"]="buoy"
+        ;;
+    "3")
+        answers["density"]="comp"
+        ;;
+    *)
+        echo "invalid"
+        ;;
+esac
+
+printf "${CYAN}\nFluid (viscosity)\n${NC}"
+printf " 1) Standard air \n"
+printf " 2) Standard water \n"
+printf " 3) Custom \n"
+
+read -n 1 option;
+case $option in 
+    "1")
+        answers["fluid"]="air"
+        ;;
+    "2")
+        answers["fluid"]="water"
+        ;;
+    "3")
+        printf "\nEnter kinematic viscosity, nu:"
+        read nu;
+        answers["fluid"]="$nu"
+        ;;
+    *)
+        echo "invalid"
+        ;;
+esac
+
+
+printf "${CYAN}\nTime behavior\n${NC}"
+printf " 1) Steady-state \n"
+printf " 2) Transient \n"
+
+read -n 1 option;
+case $option in 
+    "1")
+        answers["time"]="steady"
+        ;;
+    "2")
+        printf "${CYAN}\n   Transient Algorithm\n${NC}"
+        printf "    1) PISO \n"
+        printf "    2) PIMPLE \n"
+        read -n 1 option2;
+        case $option2 in
+            "1") answers["time"]="piso";;
+            "2") answers["time"]="pimple";;
+            *)   echo "invalid";;
+        esac
+        ;;
+    *)
+        echo "invalid"
+        ;;
+esac
+
+printf "${CYAN}\nTurbulence Modelling\n${NC}"
+printf " 1) Laminar \n"
+printf " 2) RANS \n"
+if [ ! ${answers["time"]} == "steady" ]; then
+    printf " 3) LES \n"
+    printf " 4) DES \n"
+fi
+
+read -n 1 option;
+case $option in 
+    "1")
+        answers["turbModel"]="lam"
+        answers["turbClass"]="lam"
+        ;;
+    "2")
+        answers["turbClass"]="rans"
+
+        printf "${CYAN}\n   RANS Model\n${NC}"
+        printf "    1) k-epsilon \n"
+        printf "    2) k-omegaSST \n"
+        read -n 1 option2;
+        case $option2 in
+            "1") answers["turbModel"]="kEpsilon";;
+            "2") answers["turbModel"]="kOmegaSST";;
+            *)   echo "invalid";;
+        esac
+        ;;
+    "3")
+        answers["turbClass"]="les"
+
+        printf "${CYAN}\n   LES Model\n${NC}"
+        printf "    1) Smagorinsky \n"
+        printf "    2) k equation\n"
+        read -n 1 option2;
+        case $option2 in
+            "1") answers["turbModel"]="Smagorinsky";;
+            "2") answers["turbModel"]="kEqn";;
+            *)   echo "invalid";;
+        esac
+        ;;
+    "4")
+        answers["turbClass"]="des"
+
+        printf "${CYAN}\n   DES Model\n${NC}"
+        printf "    1) k-omegaSST DES \n"
+        printf "    2) k-omegaSST DDES \n"
+        printf "    3) k-omegaSST IDDES \n"
+        printf "    4) SpalartAllmaras DES \n"
+        printf "    5) SpalartAllmaras DDES \n"
+        printf "    6) SpalartAllmaras IDDES \n"
+        read -n 1 option2;
+        case $option2 in
+            "1") answers["turbModel"]="kOmegaSSTDES";;
+            "2") answers["turbModel"]="kOmegaSSTDDES";;
+            "3") answers["turbModel"]="kOmegaSSTIDDES";;
+            "4") answers["turbModel"]="SpalartAllmarasDES";;
+            "5") answers["turbModel"]="SpalartAllmarasDDES";;
+            "6") answers["turbModel"]="SpalartAllmarasIDDES";;
+            *)   echo "invalid";;
+        esac
+        ;;
+    *)
+        echo "invalid"
+        ;;
+esac
+
+
+printf "${CYAN}\nDiscretisation\n${NC}"
+if ! ([ ${answers["turbClass"]} == "les" ] || [ ${answers["turbClass"]} == "des" ]); then
+    printf " 1) 1st order \n"
+fi
+printf " 2) 2nd order \n"
+
+read -n 1 option;
+case $option in 
+    "1")
+        answers["disc"]="first"
+        ;;
+    "2")
+        answers["disc"]="second"
+        ;;
+    *)
+        echo "invalid"
+        ;;
+esac
+
+inputDone=false
+fvOptions=false
+topoSet=false
+scalarTransport=false
+
+# helper funtion to flip a boolean
+flip() { if [ "$1" == "true" ]; then echo "false"; else echo "true"; fi }
+
+while [ "$inputDone" != "true" ]; do
+    printf "${CYAN}\nExtras?\n${NC}"
+    printf "Currently selected: "
+    $fvOptions && printf " fvOptions"
+    $topoSet && printf " topoSet"
+    $scalarTransport && printf " scalarTransport"
+    printf "\n\n 1) Done \n"
+    printf " 2) fvOptions \n"
+    printf " 3) topoSet \n"
+    printf " 4) scalarTransport \n"
+
+    read -n 1 option;
+    case $option in 
+        "1")
+            inputDone=true
+            ;;
+        "2")
+            fvOptions=$(flip "$fvOptions")
+            ;;
+        "3")
+            topoSet=$(flip "$topoSet")
+            ;;
+        "4")
+            scalarTransport=$(flip "$scalarTransport")
+            ;;
+        *)
+            echo "invalid"
+            ;;
+    esac
+done
+
+printf "\n\n"
+echo "${answers[*]}"
+printf "\n"
+
+## ----------------------------------- ##
+## --------- Generate the case ------- ##
+## ----------------------------------- ##
+
+printf "${RED}Generating case directory: $caseName\n\n${NC}"
+cp -r $templateDir $caseName && cd $caseName
+
+# Setup the solver based on density & transience
+setSolver ${answers["density"]} ${answers["time"]}
+
+# Set the fluid properties
+setNu ${answers["fluid"]}
+setThermo ${answers["fluid"]}
+
+# Set the turbulence model
+setTurbulence ${answers["turbClass"]} ${answers["turbModel"]}
+
+# Set the fvSchemes & fvSolutions
+setSchemes ${answers["disc"]} ${answers["time"]} ${answers["turbClass"]}
+setSolutions ${answers["time"]}
+
