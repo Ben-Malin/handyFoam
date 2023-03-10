@@ -1,0 +1,13 @@
+#!/bin/bash
+
+thisDir=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+
+if ! grep -q handyFoam ~/.bashrc; then
+    echo "" >> ~/.bashrc
+    echo "# handyFoam: " >> ~/.bashrc
+    echo "export handyDir=\"$thisDir\"" >> ~/.bashrc
+    echo 'alias handyFoam=". $handyDir/handyFoam"'>> ~/.bashrc
+    printf "Done\n"
+else
+    echo "handyFoam already exists in bashrc"
+fi
