@@ -224,15 +224,11 @@ while [ "$inputDone" != "true" ]; do
     esac
 done
 
-printf "\n\n"
-echo "${answers[*]}"
-printf "\n"
-
 ## ----------------------------------- ##
 ## --------- Generate the case ------- ##
 ## ----------------------------------- ##
 
-printf "${RED}Generating case directory: $caseName\n\n${NC}"
+printf "\n${RED}Generating case directory: $caseName\n\n${NC}"
 cp -r $templateDir $caseName && cd $caseName
 
 # Setup the solver based on density & transience
@@ -247,5 +243,9 @@ setTurbulence ${answers["turbClass"]} ${answers["turbModel"]}
 
 # Set the fvSchemes & fvSolutions
 setSchemes ${answers["disc"]} ${answers["time"]} ${answers["turbClass"]}
-setSolutions ${answers["time"]}
+[ ! ${answers["time"]} == 'steady' ] && setSolutions ${answers["time"]}
 
+# Return to the original dir for convenience, might remove this later
+# Assume that first thing you'll do on making a new case is cd to it
+# but it's disorienting when scripts jump you around
+cd ..

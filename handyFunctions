@@ -101,15 +101,15 @@ setTurbulence () {
         foamDictionary -entry simulationType -set laminar $turb 
     elif [ "$1" == "rans" ]; then
         foamDictionary -entry simulationType -set RAS $turb 
-        foamDictionary -entry RAS.model -set $2 $turb
+        foamDictionary -entry RAS.RASModel -set $2 $turb
     elif ([ "$1" == "les" ] || [ "$1" == "des" ]); then
         foamDictionary -entry simulationType -set LES $turb 
-        foamDictionary -entry LES.model -set $2 $turb
+        foamDictionary -entry LES.LESModel -set $2 $turb
     fi
 
     # Set the delta 
     if ([ "$1" == "les" ] || [ "$1" == "des" ]); then
-        if [[ "$2" =~ '.*IDDES' ]]; then
+        if [[ "$2" == *"IDDES"* ]]; then
             foamDictionary -entry LES.delta -set IDDESDelta $turb
         else
             foamDictionary -entry LES.delta -set cubeRootVol $turb
