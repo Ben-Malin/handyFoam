@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// List of actions. Each action is a dictionary with e.g.
+//     // name of set
+//     name    c0;
+//
+//     // type: pointSet/faceSet/cellSet/faceZoneSet/cellZoneSet
+//     type    cellSet;
+//
+//     // action to perform on set. Two types:
+//     // - require no source : clear/invert/remove
+//     //       clear  : clears set or zone
+//     //       invert : select all currently non-selected elements
+//     //       remove : removes set or zone
+//     // - require source    : new/add/delete/subset
+//     //       new    : create new set or zone from source
+//     //       add    : add source to contents
+//     //       delete : deletes source from contents
+//     //       subset : keeps elements both in contents and source
+//     action  new;
+
+actions
+(
+    // Example: create cellZone from box
+    {
+        name    c0;
+        type    cellZoneSet;
+        action  new;
+        source  boxToCell;
+        sourceInfo
+        {
+            box   (0.04 0 0)(0.06 100 100);
+        }
+    }
+
+    {
+        name    c0;
+        type    cellZoneSet;
+        action  new;
+        source surfaceToCell;
+        sourceInfo
+        {
+            file            "constant/triSurface/geom.obj";
+
+            useSurfaceOrientation false;  
+            outsidePoints   ((-99 -99 -99));    // definition of outside
+            includeCut      false;              // cells cut by surface
+            includeInside   true;               // cells not on outside of surf
+            includeOutside  false;              // cells on outside of surf
+            nearDistance    -1;                 // cells with centre near surf
+            curvature       -100;               // cells within nearDistance and near surf curvature (set to -100 if not used)
+        }
+    }
+);
+
+// ************************************************************************* //

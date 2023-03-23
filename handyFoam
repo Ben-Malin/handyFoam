@@ -245,6 +245,10 @@ setTurbulence ${answers["turbClass"]} ${answers["turbModel"]}
 setSchemes ${answers["disc"]} ${answers["time"]} ${answers["turbClass"]}
 [ ! ${answers["time"]} == 'steady' ] && setSolutions ${answers["time"]}
 
+$scalarTransport && setScalarTransport ${answers["fluid"]}
+$topoSet && setTopoSet
+$fvOptions && setFvOptions
+
 # Return to the original dir for convenience, might remove this later
 # Assume that first thing you'll do on making a new case is cd to it
 # but it's disorienting when scripts jump you around

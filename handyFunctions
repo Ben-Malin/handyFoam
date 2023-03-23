@@ -6,6 +6,8 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 ## ------------------------ ##
 
+templateDicts="$handyDir/templateDicts"
+
 setNu () {
     # Input options:
     #   $1 can be 'air', 'water', or a number that gets fed to foamDictionary
@@ -177,4 +179,63 @@ setSchemes () {
         foamDictionary -entry "divSchemes.div(phi,U)" -set "Gauss LUST grad(U)" $schemes
         foamDictionary -entry "divSchemes.scalars" -set "Gauss linearUpwind default" $schemes
     fi
+}
+
+setScalarTransport () {
+    if [ ! -d system ]; then
+        printf "system dir not found... \n"
+        exit 1
+    fi
+
+    if [ -f system/s ]; then 
+        printf "system/s exists, overwrite? [y/n]\n"
+        read -n 1 option;
+        if [ ! "$option" == "y" ]; then exit 1; fi
+    fi
+
+    printf "${CYAN}\nSetting system/s ${NC}\n" 
+    cp $templateDicts/s ./system/s;
+
+    # Option to set diffusivity
+    if [ -z "$1" ]; then
+        if [ "$1" == "air" ]; then 
+            foamDictionary -entry D -set 1.5e-05 system/s;
+        elif [ "$1" == "water" ]; then 
+            foamDictionary -entry D -set 1e-06 system/s; 
+        else 
+            foamDictionary -entry D -set "$1" system/s
+        fi
+    fi
+}
+
+setFvOptions () {
+    if [ ! -d constant ]; then
+        printf "constant dir not found... \n"
+        exit 1
+    fi
+
+    if [ -f constant/fvOptions ]; then 
+        printf "fvOptions exists, overwrite? [y/n]\n"
+        read -n 1 option;
+        if [ ! "$option" == "y" ]; then exit 1; fi
+    fi
+
+    printf "${CYAN}\nSetting constant/fvOptions ${NC}\n" 
+    cp $templateDicts/fvOptions constant/
+}
+
+setTopoSet () {
+    if [ ! -d system ]; then
+        printf "system dir not found... \n"
+        exit 1
+    fi
+
+    if [ -f system/topoSetDict ]; then 
+        printf "topoSetDict exists, overwrite? [y/n]\n"
+        read -n 1 option;
+        if [ ! "$option" == "y" ]; then exit 1; fi
+    fi
+
+    printf "${CYAN}\nSetting system/topoSetDict ${NC}\n" 
+    cp $templateDicts/topoSetDict system/
 }
