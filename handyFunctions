@@ -197,7 +197,7 @@ setScalarTransport () {
     cp $templateDicts/s ./system/s;
 
     # Option to set diffusivity
-    if [ -z "$1" ]; then
+    if [ ! -z "$1" ]; then
         if [ "$1" == "air" ]; then 
             foamDictionary -entry D -set 1.5e-05 system/s;
         elif [ "$1" == "water" ]; then 
