@@ -32,9 +32,10 @@ divSchemes
     div(phi,U)      bounded Gauss linearUpwindV grad(U);
 
     scalars         bounded Gauss upwind;
-    div(phi,k)      $scalars;
-    div(phi,omega)  $scalars;
-    div(phi,epsilon) $scalars;
+
+    div(phi,k)       SCALARS;
+    div(phi,omega)   SCALARS;
+    div(phi,epsilon) SCALARS;
 
     div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }

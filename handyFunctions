@@ -179,6 +179,8 @@ setSchemes () {
         foamDictionary -entry "divSchemes.div(phi,U)" -set "Gauss LUST grad(U)" $schemes
         foamDictionary -entry "divSchemes.scalars" -set "Gauss linearUpwind default" $schemes
     fi
+
+    sed -i 's/SCALARS/\$scalars/g' $schemes
 }
 
 setScalarTransport () {
