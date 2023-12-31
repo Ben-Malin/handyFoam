@@ -7,6 +7,7 @@ NC='\033[0m'
 ## ------------------------ ##
 
 templateDicts="$handyDir/templateDicts"
+templateBCs="$handyDir/templateBCs"
 
 setNu () {
     # Input options:
@@ -241,3 +242,72 @@ setTopoSet () {
     printf "${CYAN}\nSetting system/topoSetDict ${NC}\n" 
     cp $templateDicts/topoSetDict system/
 }
+
+setBoundaryConditions () {
+    # Input options
+    #   $1 is the turbulence model
+    #   $2 is the density option, 'incomp', 'buoy', 'comp'
+    #       compressible and multiphase not currently implemented
+
+    if [ ! -d 0.orig ]; then
+        printf "${CYAN}\nCreating 0.orig ${NC}\n" 
+        mkdir 0.orig
+    fi
+
+    cp $templateBCs/U 0.orig/U
+
+    if [[ "$2" =~ "incomp" ]]; then
+        printf "${CYAN}\nSetting incompressible BCs ${NC}\n" 
+        cp $templateBCs/p.incomp 0.orig/p
+    elif [[ "$2" =~ "buoy" ]]; then
+        printf "${CYAN}\nSetting buoyant BCs ${NC}\n" 
+        cp $templateBCs/p.buoy 0.orig/p
+        cp $templateBCs/p_rgh 0.orig/p_rgh
+        cp $templateBCs/T 0.orig/T
+        cp $templateBCs/alphat 0.orig/alphat
+    elif [[ "$2" =~ "comp" ]]; then
+        printf "${CYAN}\nSetting compressible BCs ${NC}\n" 
+        cp $templateBCs/p.comp 0.orig/p
+        cp $templateBCs/p_rgh 0.orig/p_rgh
+        cp $templateBCs/T 0.orig/T
+        cp $templateBCs/alphat 0.orig/alphat
+    fi
+
+    if [[ "$1" =~ "kOmega" ]]; then
+        printf "${CYAN}\nSetting kOmega BCs ${NC}\n" 
+        cp $templateBCs/omega 0.orig/omega
+        cp $templateBCs/k 0.orig/k
+        cp $templateBCs/nut 0.orig/nut
+    elif [[ "$1" =~ "kEpsilon" ]]; then
+        printf "${CYAN}\nSetting kEpsilon BCs ${NC}\n" 
+        cp $templateBCs/epsilon 0.orig/epsilon
+        cp $templateBCs/k 0.orig/k
+        cp $templateBCs/nut 0.orig/nut
+    fi
+
+    if [[ "$1" =~ "Spalart" ]]; then
+        printf "${CYAN}\nSetting SpalartAllmaras BCs ${NC}\n" 
+        cp $templateBCs/nut 0.orig/nut
+        cp $templateBCs/nuTilda 0.orig/nuTilda
+    fi
+
+    if [[ "$1" =~ "kEqn" ]]; then
+        printf "${CYAN}\nSetting kEqn BCs ${NC}\n" 
+        cp $templateBCs/k 0.orig/k
+        cp $templateBCs/nut 0.orig/nut
+    fi
+
+    if [[ "$1" =~ "Smagorinsky" ]]; then
+        printf "${CYAN}\nSetting Smagorinsky BCs ${NC}\n" 
+        cp $templateBCs/nut 0.orig/nut
+    fi
+
+}
+
+
+
+
+
+
+
+

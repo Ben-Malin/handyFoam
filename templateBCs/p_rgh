@@ -26,6 +26,13 @@ boundaryField
         value           $internalField;
     }
 
+
+    inlet
+    {
+        type            fixedFluxExtrapolatedPressure;
+        value           $internalField;
+    }
+
     outlet
     {
         type            fixedValue;

@@ -7,6 +7,7 @@
 # which is closest to the case you're looking at
 
 templateDir="$handyDir/templateCase"
+templateBCs="$handyDir/templateBCs"
 
 # Source the set functions
 . $handyDir/handyFunctions
@@ -248,6 +249,9 @@ setSchemes ${answers["disc"]} ${answers["time"]} ${answers["turbClass"]}
 $scalarTransport && setScalarTransport ${answers["fluid"]}
 $topoSet && setTopoSet
 $fvOptions && setFvOptions
+
+# Set the boundary conditions
+setBoundaryConditions ${answers["turbModel"]} ${answers["density"]}
 
 # Return to the original dir for convenience, might remove this later
 # Assume that first thing you'll do on making a new case is cd to it

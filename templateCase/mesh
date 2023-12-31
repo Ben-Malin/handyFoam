@@ -9,7 +9,7 @@ cd "${0%/*}" || exit 1
 runApplication -o blockMesh
 runApplication -o decomposePar -force
 
-runParallel -o snappyHexMesh
-runParallel -o renumberMesh
+runParallel -o snappyHexMesh -overwrite
+runParallel -o renumberMesh -constant
 
 #------------------------------------------------------------------------------

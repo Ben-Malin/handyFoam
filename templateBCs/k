@@ -17,7 +17,7 @@ FoamFile
 
 dimensions      [0 2 -2 0 0 0 0];
 
-internalField   uniform 0.00375; // (3/2)*(U*0.05)^2
+internalField   uniform 1; // (3/2)*(U*TI)^2
 
 boundaryField
 {
@@ -29,7 +29,7 @@ boundaryField
     }
     wall
     {
-        type            kLowReWallFunction;    //kqRWallFunction;
+        type            kqRWallFunction;
         value           uniform 0;
     }
 
