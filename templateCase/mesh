@@ -10,6 +10,6 @@ runApplication -o blockMesh
 runApplication -o decomposePar -force
 
 runParallel -o snappyHexMesh -overwrite
-runParallel -o renumberMesh -constant
+runParallel -o renumberMesh -overwrite
 
 #------------------------------------------------------------------------------
